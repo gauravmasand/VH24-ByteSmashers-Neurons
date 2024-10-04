@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken');
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.hostinger.com', // Replace with your hosting provider's SMTP host
-    port: 465, // Commonly used port for SMTP
-    secure: true, // Use true if using port 465, false otherwise
+    port: 465,                  // Commonly used port for SMTP
+    secure: true,               // Use true if using port 465, false otherwise
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
