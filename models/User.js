@@ -35,6 +35,7 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+<<<<<<< HEAD
   isFingerprint: {
     type: Boolean,
     default: false
@@ -42,6 +43,23 @@ const UserSchema = new mongoose.Schema({
   fingerprint: {
     type: String,
     default: null
+=======
+  faceauth: {
+    type: Boolean,
+    default: false
+  },
+  fingerauth: {
+    type: Boolean,
+    default: false
+  },
+  facetoken: {
+    type: String,
+    default: ''
+  },
+  fingertoken: {
+    type: String,
+    default: ''
+>>>>>>> bbe3636b4eb56589af91daf762137da683140ba9
   }
 });
 
@@ -51,4 +69,8 @@ UserSchema.pre('save', async function (next) {
   next();
 });
 
+<<<<<<< HEAD
 module.exports = mongoose.model('User', UserSchema);
+=======
+module.exports = mongoose.model('User', UserSchema);
+>>>>>>> bbe3636b4eb56589af91daf762137da683140ba9
