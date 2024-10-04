@@ -39,15 +39,15 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  irisauth: {
-    type: Boolean,
-    default: false
-  },
   fingerauth: {
     type: Boolean,
     default: false
   },
-  specialtoken: {
+  facetoken: {
+    type: String,
+    default: ''
+  },
+  fingertoken: {
     type: String,
     default: ''
   }

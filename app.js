@@ -24,6 +24,11 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api', require('./routes/emailVerificationRoutes'));
 // app.use('/api/auth-phone', require('./routes/authPhone'));
 
+
+// Special Authentication Routes (face and finger auth)
+app.use('/api/specialauth', require('./routes/routes')); // Add this line
+
+
 // Start the server
-const PORT = process.env.PORT || 5505;
+const PORT = process.env.PORT || 5005;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
