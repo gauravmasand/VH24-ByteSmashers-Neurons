@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
-    res.send('Welcome to the Node.js API!');
+    res.send('Welcome to the Node js API!');
 });
 
 // Routes
