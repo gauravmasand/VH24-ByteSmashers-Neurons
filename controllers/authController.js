@@ -3,8 +3,10 @@ const jwt = require("jsonwebtoken");
 const geoip = require("geoip-lite");
 const bcrypt = require("bcrypt");
 const axios = require('axios');
+const crypto = require('crypto');
 const OTP = require('../models/OTP');
 const { sendOtpToEmail } = require('../utils/otpUtils');
+const nodemailer = require('nodemailer');
 
 const { sendVerificationEmail } = require('../utils/emailUtils');
 
@@ -49,6 +51,7 @@ exports.register = async (req, res) => {
   }
 };
 
+
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -67,14 +70,80 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
+    // Generate OTP
+    const otp = crypto.randomInt(100000, 999999).toString(); // Generates a 6-digit OTP
+    const otpExpiry = Date.now() + 10 * 60 * 1000; // OTP valid for 10 minutes
+
+    // Store OTP and expiry in the user's record
+    user.otp = otp;
+    user.otpExpiry = otpExpiry;
+    await user.save();
+
+    // Send OTP email
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.hostinger.com', // Replace with your hosting provider's SMTP host
+      port: 465,                  // Commonly used port for SMTP
+      secure: true,               // Use true if using port 465, false otherwise
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      debug: true, // Enable debugging to identify email send issues
+      logger: true, // Log the communication with the server
     });
-    res.json({ token });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,  // Use EMAIL_USER instead of EMAIL
+      to: user.email,
+      subject: 'Your OTP for Login Verification',
+      text: `Your OTP for login is: ${otp}. It is valid for 10 minutes.`,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log("OTP email sent successfully to:", user.email);
+      res.status(200).json({ message: "OTP has been sent to your email address." });
+    } catch (err) {
+      console.error("Error sending OTP email:", err);
+      res.status(500).json({ message: "Error sending OTP email." });
+    }
+
   } catch (err) {
+    console.error("Error during login process:", err);
     res.status(500).send("Server Error");
   }
 };
+
+exports.loginOTPVerify = async (req, res) => {
+  const { email, otp } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Check if OTP is valid
+    if (user.otp !== otp || user.otpExpiry < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // OTP is valid, clear OTP fields and generate a JWT
+    user.otp = undefined;
+    user.otpExpiry = undefined;
+    await user.save();
+
+    // Generate JWT token after OTP verification
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.json({ token });
+  } catch (err) {
+    console.error("Error during OTP verification process: ", err); // Log detailed error to console for debugging
+    res.status(500).send("Server Error");
+  }
+};
+
 
 
 //// Email OTP login

@@ -42,7 +42,9 @@ const UserSchema = new mongoose.Schema({
   fingerprint: {
     type: String,
     default: null
-  }
+  },
+  otp: String,
+  otpExpiry: Date,
 });
 
 UserSchema.pre('save', async function (next) {
