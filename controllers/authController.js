@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const geoip = require("geoip-lite");
 const bcrypt = require("bcrypt");
 const axios = require('axios');
+
 const { sendVerificationEmail } = require('../utils/emailUtils');
 
 exports.register = async (req, res) => {
@@ -53,10 +54,17 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
+    
+    // Check if the email is verified
+    if (!user.isVerified) {
+      return res.status(400).json({ message: "Please verify your email before logging in." });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
+
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
