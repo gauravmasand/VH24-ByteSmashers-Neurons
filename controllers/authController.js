@@ -89,7 +89,16 @@ exports.registerForOtp = async (req, res) => {
     }
     user = new User({ name, email, password, phone, ip, location });
     await user.save();
-    res.status(201).json({ message: 'User registered successfully' });
+
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const otpEntry = new OTP({ email, otp });
+
+    await OTP.deleteMany({ email }); // Remove previous OTPs for the email
+    await otpEntry.save();
+
+    await sendOtpToEmail(email, otp); // Updated to actually send an email
+    res.status(200).json({ message: 'User registered successfully and OTP sent successfully' });
+
   } catch (err) {
     res.status(500).send('Server Error');
   }

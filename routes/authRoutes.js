@@ -7,7 +7,6 @@ const router = express.Router();
 router.post('/register', register);
 router.post('/login', login);
 
-
 router.post('/register-for-otp', registerForOtp);
 router.post('/request-otp', requestOTP);
 router.post('/verify-otp', verifyOTP);
