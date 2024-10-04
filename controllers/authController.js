@@ -2,33 +2,34 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const geoip = require("geoip-lite");
 const bcrypt = require("bcrypt");
-const axios = require('axios');
-const crypto = require('crypto');
-const OTP = require('../models/OTP');
-const { sendOtpToEmail } = require('../utils/otpUtils');
-const nodemailer = require('nodemailer');
+const axios = require("axios");
+const crypto = require("crypto");
+const OTP = require("../models/OTP");
+const { sendOtpToEmail } = require("../utils/otpUtils");
+const nodemailer = require("nodemailer");
+const refreshTokens = new Map();
 
-const { sendVerificationEmail } = require('../utils/emailUtils');
+const { sendVerificationEmail } = require("../utils/emailUtils");
 
 exports.register = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    console.log('Step 1: Checking if the user already exists...');
+    console.log("Step 1: Checking if the user already exists...");
     let user = await User.findOne({ email });
 
     if (user) {
-      console.log('Step 2: User already exists');
-      return res.status(400).json({ message: 'User already exists' });
+      console.log("Step 2: User already exists");
+      return res.status(400).json({ message: "User already exists" });
     }
 
-    console.log('Step 3: Creating new user...');
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    console.log("Step 3: Creating new user...");
+    const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const geo = geoip.lookup(ip) || {};
     const location = {
-      country: geo.country || 'Unknown',
-      state: geo.region || 'Unknown',
-      city: geo.city || 'Unknown'
+      country: geo.country || "Unknown",
+      state: geo.region || "Unknown",
+      city: geo.city || "Unknown",
     };
 
     user = new User({
@@ -36,21 +37,25 @@ exports.register = async (req, res) => {
       email,
       password,
       ip,
-      location
+      location,
     });
     await user.save();
 
-    console.log('Step 4: Sending verification email...');
+    console.log("Step 4: Sending verification email...");
     await sendVerificationEmail(email, user.id);
 
-    console.log('Step 5: Registration successful');
-    res.status(201).json({ message: 'User registered successfully, please check your email to verify your account' });
+    console.log("Step 5: Registration successful");
+    res
+      .status(201)
+      .json({
+        message:
+          "User registered successfully, please check your email to verify your account",
+      });
   } catch (err) {
-    console.error('Error occurred during registration:', err);
-    res.status(500).send('Server Error');
+    console.error("Error occurred during registration:", err);
+    res.status(500).send("Server Error");
   }
 };
-
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -59,10 +64,12 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
-    
+
     // Check if the email is verified
     if (!user.isVerified) {
-      return res.status(400).json({ message: "Please verify your email before logging in." });
+      return res
+        .status(400)
+        .json({ message: "Please verify your email before logging in." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -81,9 +88,9 @@ exports.login = async (req, res) => {
 
     // Send OTP email
     const transporter = nodemailer.createTransport({
-      host: 'smtp.hostinger.com', // Replace with your hosting provider's SMTP host
-      port: 465,                  // Commonly used port for SMTP
-      secure: true,               // Use true if using port 465, false otherwise
+      host: "smtp.hostinger.com", // Replace with your hosting provider's SMTP host
+      port: 465, // Commonly used port for SMTP
+      secure: true, // Use true if using port 465, false otherwise
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -93,21 +100,22 @@ exports.login = async (req, res) => {
     });
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,  // Use EMAIL_USER instead of EMAIL
+      from: process.env.EMAIL_USER, // Use EMAIL_USER instead of EMAIL
       to: user.email,
-      subject: 'Your OTP for Login Verification',
+      subject: "Your OTP for Login Verification",
       text: `Your OTP for login is: ${otp}. It is valid for 10 minutes.`,
     };
 
     try {
       await transporter.sendMail(mailOptions);
       console.log("OTP email sent successfully to:", user.email);
-      res.status(200).json({ message: "OTP has been sent to your email address." });
+      res
+        .status(200)
+        .json({ message: "OTP has been sent to your email address." });
     } catch (err) {
       console.error("Error sending OTP email:", err);
       res.status(500).json({ message: "Error sending OTP email." });
     }
-
   } catch (err) {
     console.error("Error during login process:", err);
     res.status(500).send("Server Error");
@@ -137,13 +145,56 @@ exports.loginOTPVerify = async (req, res) => {
       expiresIn: "1h",
     });
 
-    res.json({ token });
+    // Generate Refresh Token
+    const refreshToken = crypto.randomBytes(64).toString('hex');
+    refreshTokens.set(refreshToken, user.id);
+
+    // Send email notification about the login
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const userAgent = req.get('User-Agent');
+
+    // Use a different SMTP server to avoid Gmail restrictions
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST, // Replace with your SMTP server host
+      port: process.env.SMTP_PORT, // Replace with your SMTP server port
+      secure: process.env.SMTP_SECURE === 'true', // Use true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER, // SMTP user
+        pass: process.env.SMTP_PASS, // SMTP password
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_SENDER,
+      to: user.email,
+      subject: 'New Login Detected',
+      text: `A new login to your account was detected.
+
+Device Details:
+- IP Address: ${ip}
+- User Agent: ${userAgent}
+
+If this wasn't you, please change your password immediately.`
+    };
+
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`OTP email sent successfully to: ${user.email}, Message ID: ${info.messageId}`);
+    } catch (emailError) {
+      console.error("Error sending email notification: ", emailError);
+    }
+
+    res.json({
+      token,
+      refreshToken,
+      expiresIn: 3600, // Token expiry time in seconds
+      userId: user.id
+    });
   } catch (err) {
     console.error("Error during OTP verification process: ", err); // Log detailed error to console for debugging
     res.status(500).send("Server Error");
   }
 };
-
 
 
 //// Email OTP login
@@ -154,7 +205,7 @@ exports.registerForOtp = async (req, res) => {
   try {
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: "User already exists" });
     }
     user = new User({ name, email, password, phone, ip, location });
     await user.save();
@@ -166,10 +217,13 @@ exports.registerForOtp = async (req, res) => {
     await otpEntry.save();
 
     await sendOtpToEmail(email, otp); // Updated to actually send an email
-    res.status(200).json({ message: 'User registered successfully and OTP sent successfully' });
-
+    res
+      .status(200)
+      .json({
+        message: "User registered successfully and OTP sent successfully",
+      });
   } catch (err) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 };
 
@@ -179,7 +233,7 @@ exports.requestOTP = async (req, res) => {
   try {
     let user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+      return res.status(400).json({ message: "User not found" });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000);
@@ -189,9 +243,9 @@ exports.requestOTP = async (req, res) => {
     await otpEntry.save();
 
     await sendOtpToEmail(email, otp); // Updated to actually send an email
-    res.status(200).json({ message: 'OTP sent successfully' });
+    res.status(200).json({ message: "OTP sent successfully" });
   } catch (err) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 };
 
@@ -201,7 +255,7 @@ exports.verifyOTP = async (req, res) => {
   try {
     const otpRecord = await OTP.findOne({ email, otp });
     if (!otpRecord) {
-      return res.status(400).json({ message: 'Invalid OTP' });
+      return res.status(400).json({ message: "Invalid OTP" });
     }
 
     const user = await User.findOne({ email });
@@ -209,12 +263,12 @@ exports.verifyOTP = async (req, res) => {
     await user.save();
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: '1h'
+      expiresIn: "1h",
     });
 
     await OTP.deleteMany({ email }); // Clean up used OTP
     res.status(200).json({ token });
   } catch (err) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 };
