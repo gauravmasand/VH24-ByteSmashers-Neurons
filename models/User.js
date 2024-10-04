@@ -34,6 +34,14 @@ const UserSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false
+  },
+  isFingerprint: {
+    type: Boolean,
+    default: false
+  },
+  fingerprint: {
+    type: String,
+    default: null
   }
 });
 
@@ -44,4 +52,3 @@ UserSchema.pre('save', async function (next) {
 });
 
 module.exports = mongoose.model('User', UserSchema);
-

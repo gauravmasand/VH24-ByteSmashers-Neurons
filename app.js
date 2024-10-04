@@ -21,6 +21,7 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/auth/fingerprint', require('./routes/updateFingerprint'));
 app.use('/api', require('./routes/emailVerificationRoutes'));
 // app.use('/api/auth-phone', require('./routes/authPhone'));
 
