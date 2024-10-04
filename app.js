@@ -21,8 +21,8 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/otp', require('./routes/otpRoutes'));
 app.use('/api', require('./routes/emailVerificationRoutes'));
+// app.use('/api/auth-phone', require('./routes/authPhone'));
 
 // Start the server
 const PORT = process.env.PORT || 5505;

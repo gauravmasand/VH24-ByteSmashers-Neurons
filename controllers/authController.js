@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const geoip = require("geoip-lite");
 const bcrypt = require("bcrypt");
 const axios = require('axios');
+const OTP = require('../models/OTP');
+const { sendOtpToEmail } = require('../utils/otpUtils');
 
 const { sendVerificationEmail } = require('../utils/emailUtils');
 
@@ -71,5 +73,70 @@ exports.login = async (req, res) => {
     res.json({ token });
   } catch (err) {
     res.status(500).send("Server Error");
+  }
+};
+
+
+//// Email OTP login
+
+// User Registration
+exports.registerForOtp = async (req, res) => {
+  const { name, email, password, phone, ip, location } = req.body;
+  try {
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+    user = new User({ name, email, password, phone, ip, location });
+    await user.save();
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (err) {
+    res.status(500).send('Server Error');
+  }
+};
+
+// Request OTP for Login
+exports.requestOTP = async (req, res) => {
+  const { email } = req.body;
+  try {
+    let user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const otpEntry = new OTP({ email, otp });
+
+    await OTP.deleteMany({ email }); // Remove previous OTPs for the email
+    await otpEntry.save();
+
+    await sendOtpToEmail(email, otp); // Updated to actually send an email
+    res.status(200).json({ message: 'OTP sent successfully' });
+  } catch (err) {
+    res.status(500).send('Server Error');
+  }
+};
+
+// Verify OTP for Login
+exports.verifyOTP = async (req, res) => {
+  const { email, otp } = req.body;
+  try {
+    const otpRecord = await OTP.findOne({ email, otp });
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+
+    const user = await User.findOne({ email });
+    user.isVerified = true; // Update user verification status
+    await user.save();
+
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+      expiresIn: '1h'
+    });
+
+    await OTP.deleteMany({ email }); // Clean up used OTP
+    res.status(200).json({ token });
+  } catch (err) {
+    res.status(500).send('Server Error');
   }
 };
