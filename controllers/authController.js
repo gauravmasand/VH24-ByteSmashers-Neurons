@@ -40,7 +40,7 @@ exports.register = async (req, res) => {
 
     console.log('Step 4: Sending verification email...');
     await sendVerificationEmail(email, user.id);
-    
+
     console.log('Step 5: Registration successful');
     res.status(201).json({ message: 'User registered successfully, please check your email to verify your account' });
   } catch (err) {
