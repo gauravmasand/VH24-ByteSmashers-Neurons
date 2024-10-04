@@ -17,6 +17,7 @@
     "cors": "^2.8.5",
     "twilio": "^4.11.0",
     "geoip-lite": "^1.4.1",
+    "axios": "^10.8.2",
     "nodemailer": "^6.9.1"
   },
   "devDependencies": {
