@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Authentication API Documentation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .code-block {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Authentication API Documentation</h1>
+
+    <p>This API provides authentication services through <strong>JWT-based token authentication</strong> and <strong>OTP-based phone and email verification</strong>. It supports user registration, login, sending OTPs, and verifying email addresses. Below are the available endpoints and their details.</p>
+
+    <h2>Base URL</h2>
+   <a href="https://vh24-bytesmashers-neurons-2.onrender.com"> <p><code>https://vh24-bytesmashers-neurons-2.onrender.com</code></p></a>
+
+    <h2>Endpoints</h2>
+
+    <!-- Phone-based OTP Authentication -->
+
+    <h3>1. Phone-based OTP Authentication</h3>
+
+    <h4>1.1 Request OTP for Phone Signup</h4>
+    <p><strong>Endpoint:</strong> <code>POST /signup/phone/request-otp</code></p>
+    <p><strong>Purpose:</strong> Sends an OTP to the user's phone number for verification.</p>
+    
+    <h5>Request:</h5>
+    <pre>
+{
+  "phoneNumber": "+1234567890"
+}
+    </pre>
+
+    <h5>Response:</h5>
+    <h6>Success (200):</h6>
+    <pre>
+{
+  "status": "success",
+  "message": "OTP sent to the provided phone number."
+}
+    </pre>
+
+    <h6>Failure (400):</h6>
+    <pre>
+{
+  "status": "error",
+  "message": "Invalid phone number or OTP generation failed."
+}
+    </pre>
+
+    <h4>1.2 Verify OTP for Phone Signup</h4>
+    <p><strong>Endpoint:</strong> <code>POST /signup/phone/verify-otp</code></p>
+    <p><strong>Purpose:</strong> Verifies the OTP entered by the user for phone number signup.</p>
+
+    <h5>Request:</h5>
+    <pre>
+{
+  "phoneNumber": "+1234567890",
+  "otp": "123456"
+}
+    </pre>
+
+    <h5>Response:</h5>
+    <h6>Success (200):</h6>
+    <pre>
+{
+  "status": "success",
+  "message": "Phone number verified successfully."
+}
+    </pre>
+
+    <h6>Failure (400):</h6>
+    <pre>
+{
+  "status": "error",
+  "message": "Invalid OTP or OTP expired."
+}
+    </pre>
+
+    <!-- Email-based OTP Authentication -->
+
+    <h3>2. Email-based OTP Authentication</h3>
+
+    <h4>2.1 Register for OTP (Email-based)</h4>
+    <p><strong>Endpoint:</strong> <code>POST /register-for-otp</code></p>
+    <p><strong>Purpose:</strong> Registers a user for OTP-based email authentication.</p>
+    
+    <h5>Request:</h5>
+    <pre>
+{
+  "email": "user@example.com"
+}
+    </pre>
+
+    <h5>Response:</h5>
+    <h6>Success (200):</h6>
+    <pre>
+{
+  "status": "success",
+  "message": "User registered for OTP."
+}
+    </pre>
+
+    <h6>Failure (400):</h6>
+    <pre>
+{
+  "status": "error",
+  "message": "Registration failed. Email might be invalid."
+}
+    </pre>
+
+    <h4>2.2 Request OTP for Email Verification</h4>
+    <p><strong>Endpoint:</strong> <code>POST /request-otp</code></p>
+    <p><strong>Purpose:</strong> Sends an OTP to the registered email address for verification.</p>
+
+    <h5>Request:</h5>
+    <pre>
+{
+  "email": "user@example.com"
+}
+    </pre>
+
+    <h5>Response:</h5>
+    <h6>Success (200):</h6>
+    <pre>
+{
+  "status": "success",
+  "message": "OTP sent to the provided email address."
+}
+    </pre>
+
+    <h6>Failure (400):</h6>
+    <pre>
+{
+  "status": "error",
+  "message": "Failed to send OTP. Email might be invalid."
+}
+    </pre>
+
+    <h4>2.3 Verify OTP for Email Verification</h4>
+    <p><strong>Endpoint:</strong> <code>POST /verify-otp</code></p>
+    <p><strong>Purpose:</strong> Verifies the OTP entered by the user for email verification.</p>
+
+    <h5>Request:</h5>
+    <pre>
+{
+  "email": "user@example.com",
+  "otp": "123456"
+}
+    </pre>
+
+    <h5>Response:</h5>
+    <h6>Success (200):</h6>
+    <pre>
+{
+  "status": "success",
+  "message": "Email verified successfully."
+}
+    </pre>
+
+    <h6>Failure (400):</h6>
+    <pre>
+{
+  "status": "error",
+  "message": "Invalid OTP or OTP expired."
+}
+    </pre>
+
+    <!-- General Authentication -->
+
+    <h3>3. General Authentication</h3>
+
+    <h4>3.1 User Registration</h4>
+    <p><strong>Endpoint:</strong> <code>POST /register</code></p>
+    <p><strong>Purpose:</strong> Registers a new user.</p>
+
+    <h5>Request:</h5>
+    <pre>
+{
+  "email": "user@example.com",
+  "password": "yourPassword",
+  "name": "John Doe"
+}
+    </pre>
+
+    <h5>Response:</h5>
+    <h6>Success (200):</h6>
+    <pre>
+{
+  "status": "success",
+  "message": "User registered successfully."
+}
+    </pre>
+
+    <h6>Failure (400):</h6>
+    <pre>
+{
+  "status": "error",
+  "message": "Registration failed. Email might already exist."
+}
+    </pre>
+
+    <h4>3.2 User Login</h4>
+    <p><strong>Endpoint:</strong> <code>POST /login</code></p>
+    <p><strong>Purpose:</strong> Logs in an existing user.</p>
+
+    <h5>Request:</h5>
+    <pre>
+{
+  "email": "user@example.com",
+  "password": "yourPassword"
+}
+    </pre>
+
+    <h5>Response:</h5>
+    <h6>Success (200):</h6>
+    <pre>
+{
+  "status": "success",
+  "token": "JWT_TOKEN"
+}
+    </pre>
+
+    <h6>Failure (400):</h6>
+    <pre>
+{
+  "status": "error",
+  "message": "Login failed. Invalid credentials."
+}
+    </pre>
+
+    <!-- JWT Middleware -->
+
+    <h3>4. Token-based Authentication (JWT)</h3>
+
+    <h4>4.1 Middleware for Authenticated Routes</h4>
+    <p><strong>Purpose:</strong> Protects routes by verifying JWT tokens in the request header.</p>
+
+    <h5>Request Header:</h5>
+    <pre>
+{
+  "x-auth-token": "JWT_TOKEN"
+}
+    </pre>
+
+    <h5>Response:</h5>
+    <h6>Success (200):</h6>
+    <pre>
+{
+  "status": "success",
+  "message": "Token is valid."
+}
+    </pre>
+
+    <h6>Failure (401):</h6>
+    <pre>
+{
+  "status": "error",
+  "message": "No token, authorization denied."
+}
+    </pre>
+
+    <!-- Email Verification -->
+
+    <h3>5. Email Verification</h3>
+
+    <h4>5.1 Verify Email with Token</h4>
+    <p><strong>Endpoint:</strong> <code>GET /verify-email</code></p>
+    <p><strong>Purpose:</strong> Verifies the user's email using the token sent in the verification link.</p>
+
+    <h5>Request:</h5>
+    <pre>
+GET /verify-email?token=YOUR_VERIFICATION_TOKEN
+    </pre>
+
+    <h5>Response:</h5>
+    <h6>Success (200):</h6>
+    <pre>
+{
+  "status": "success",
+  "message": "Email verified successfully."
+}
+    </pre>
+
+    <h6>Failure (400):</h6>
+    <pre>
+{
+  "status": "error",
+  "message": "Invalid verification link."
+}
+    </pre>
+
+    <h2>Status Codes</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Status Code</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>200</td>
+                <td>Success</td>
+            </tr>
+            <tr>
+                <td>400</td>
+                <td>Bad Request (Invalid Input or Parameters)</td>
+            </tr>
+            <tr>
+                <td>401</td>
+                <td>Unauthorized (Invalid Authentication Credentials)</td>
+            </tr>
+            <tr>
+                <td>404</td>
+                <td>Not Found (Endpoint does not exist)</td>
+            </tr>
+            <tr>
+                <td>500</td>
+                <td>Internal Server Error</td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>
