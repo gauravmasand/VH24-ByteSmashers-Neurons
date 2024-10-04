@@ -1,71 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <title>Home Page</title>
-  <script>
-    // Redirect to welcome page if not logged in
-    if (!localStorage.getItem('authToken')) {
-      window.location.href = 'index.html';
-    }
-  </script>
-</head>
-<body>
-  <div class="container mt-5">
-    <h2>Home Page</h2>
-    <p>Welcome, you are logged in!</p>
-    <p><strong>Your Token:</strong></p>
-    <pre id="tokenDisplay"></pre>
-    <button id="logoutButton" class="btn btn-danger">Logout</button>
-
-    <div class="mt-5">
-      <h4>Add Fingerprint</h4>
-      <form id="fingerprintForm">
-        <div class="mb-3">
-          <label for="fingerprint" class="form-label">Fingerprint Data</label>
-          <input type="text" class="form-control" id="fingerprint" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Add Fingerprint</button>
-      </form>
-      <div id="fingerprintMessage" class="mt-3"></div>
-    </div>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    // Display the token
-    document.getElementById('tokenDisplay').textContent = localStorage.getItem('authToken');
-
-    // Logout functionality
-    document.getElementById('logoutButton').addEventListener('click', () => {
-      localStorage.removeItem('authToken');
-      window.location.href = 'index.html';
-    });
-
-    // Add Fingerprint functionality
-    document.getElementById('fingerprintForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      console.log('Fingerprint form submitted');
-      const fingerprint = document.getElementById('fingerprint').value;
-      const token = localStorage.getItem('authToken');
-
-      try {
-        const response = await fetch('https://vh24-bytesmashers-neurons-2.onrender.com/api/auth/fingerprint/update-fingerprint/update-fingerprint', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ fingerprint })
-        });
-        const result = await response.json();
-        console.log('Update Fingerprint API Response:', result);
-        document.getElementById('fingerprintMessage').innerHTML = result.message;
-      } catch (error) {
-        console.error('Error during fingerprint update:', error);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <title>Home Page</title>
+    <script>
+      // Redirect to welcome page if not logged in
+      if (!localStorage.getItem("authToken")) {
+        window.location.href = "index.html";
       }
-    });
-  </script>
-</body>
+    </script>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h2>Home Page</h2>
+      <p>Welcome, you are logged in!</p>
+      <p><strong>Your Token:</strong></p>
+      <pre id="tokenDisplay"></pre>
+      <button id="logoutButton" class="btn btn-danger">Logout</button>
+
+      <div class="mt-5">
+        <h4>Add Fingerprint</h4>
+        <button id="addFingerprintButton" class="btn btn-primary">
+          Add Fingerprint
+        </button>
+        <div id="fingerprintMessage" class="mt-3"></div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Display the token
+      document.getElementById("tokenDisplay").textContent =
+        localStorage.getItem("authToken");
+
+      // Logout functionality
+      document.getElementById("logoutButton").addEventListener("click", () => {
+        localStorage.removeItem("authToken");
+        window.location.href = "index.html";
+      });
+
+      // Add Fingerprint functionality using WebAuthn
+      document
+        .getElementById("addFingerprintButton")
+        .addEventListener("click", async () => {
+          try {
+            if (window.PublicKeyCredential) {
+              const options = {
+                publicKey: {
+                  challenge: Uint8Array.from("randomChallenge", (c) =>
+                    c.charCodeAt(0)
+                  ),
+                  rp: {
+                    name: "Example Service",
+                  },
+                  user: {
+                    id: Uint8Array.from("uniqueUserId", (c) => c.charCodeAt(0)),
+                    name: "user@example.com",
+                    displayName: "User Name",
+                  },
+                  pubKeyCredParams: [
+                    { type: "public-key", alg: -7 }, // ES256
+                    { type: "public-key", alg: -257 }, // RS256
+                  ],
+                  authenticatorSelection: {
+                    authenticatorAttachment: "platform", // Use the platform authenticator, such as a fingerprint reader on the laptop
+                    userVerification: "required", // Require user verification such as a fingerprint scan
+                  },
+                  timeout: 60000,
+                  attestation: "direct",
+                },
+              };
+
+              const credential = await navigator.credentials.create(options);
+              console.log("Fingerprint credential created:", credential);
+
+              // Send fingerprint credential data to server
+              const token = localStorage.getItem("authToken");
+              const response = await fetch(
+                "https://vh24-bytesmashers-neurons-2.onrender.com/api/auth/fingerprint/update-fingerprint",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ fingerprint: credential }), // Use correct property name
+                }
+              );
+              const result = await response.json();
+              console.log("Update Fingerprint API Response:", result);
+              document.getElementById("fingerprintMessage").innerHTML =
+                result.message;
+            } else {
+              alert("WebAuthn API not supported in this browser.");
+            }
+          } catch (error) {
+            console.error("Error during fingerprint addition:", error);
+            document.getElementById("fingerprintMessage").innerHTML =
+              "Fingerprint registration failed.";
+          }
+        });
+    </script>
+  </body>
 </html>
