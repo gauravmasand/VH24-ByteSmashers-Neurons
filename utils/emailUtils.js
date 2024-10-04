@@ -16,7 +16,7 @@ const sendVerificationEmail = (email, userId) => {
     expiresIn: '1d',
   });
 
-  const verificationLink = `http://localhost:5000/api/verify-email?token=${verificationToken}`;
+  const verificationLink = `https://vh24-bytesmashers-neurons-2.onrender.com/api/verify-email?token=${verificationToken}`;
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
