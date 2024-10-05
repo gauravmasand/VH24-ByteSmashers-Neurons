@@ -67,7 +67,6 @@ exports.register = async (req, res) => {
   }
 };
 
-// Rate limiting login attempts and lockout mechanism
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   const maxAttempts = 5;
@@ -201,6 +200,65 @@ exports.loginOTPVerify = async (req, res) => {
     });
   } catch (err) {
     console.error("Error during OTP verification process: ", err); // Log detailed error to console for debugging
+    res.status(500).send("Server Error");
+  }
+};
+
+exports.googleRegisterAndLogin = async (req, res) => {
+  const { name, email, password } = req.body;
+
+  try {
+
+    if (!email || !name || !password) {
+      return res.status(400).json({ message: "All fields is required." });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
+
+    console.log("Step 1: Checking if the user already exists...");
+    let user = await User.findOne({ email });
+
+    if (user) {
+      console.log("Step 2: User already exists, logging in user...");
+      // Generate a token for the user
+      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      return res.status(200).json({ message: "Login successful", token });
+    }
+
+    console.log("Step 3: Creating new user...");
+    const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const geo = geoip.lookup(ip) || {};
+    const location = {
+      country: geo.country || "Unknown",
+      state: geo.region || "Unknown",
+      city: geo.city || "Unknown",
+    };
+
+    user = new User({
+      name,
+      email,
+      password,
+      ip,
+      location,
+      isVerified: true // Set isVerified to true by default
+    });
+    await user.save();
+
+    console.log("Step 4: Sending verification email...");
+    await sendVerificationEmail(email, user.id);
+
+    console.log("Step 5: Registration successful");
+    // Generate a token for the new user
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.status(201).json({
+      message: "User registered successfully, please check your email to verify your account",
+      token
+    });
+  } catch (err) {
+    console.error("Error occurred during registration:", err);
     res.status(500).send("Server Error");
   }
 };
