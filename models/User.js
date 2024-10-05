@@ -45,6 +45,18 @@ const UserSchema = new mongoose.Schema({
   },
   otp: String,
   otpExpiry: Date,
+  userdevice: {
+    type: String,
+    default: "mobile"
+  },
+  sessiontime: {
+    type: String,
+    default: "30"
+  },
+  status: {
+    type: String,
+    default: "Authorized"
+  }
 });
 
 UserSchema.pre('save', async function (next) {
