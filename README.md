@@ -284,6 +284,94 @@ Status Code	Description
 404	Not Found (Endpoint does not exist)
 500	Internal Server Error
 css
- 
+
+ # Test Cases for Authentication System
+
+This project contains an HTML table-based representation of test cases for an *Authentication System. The test cases cover functionalities like **Account Creation, **Login (Email & Password, OTP, Email OTP)*, and other general system actions like password reset and logout.
+
+## Table of Contents
+
+- [Project Description](#project-description)
+- [Features](#features)
+- [How to Use](#how-to-use)
+- [Test Case Structure](#test-case-structure)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Project Description
+
+This project serves as a reference for the key test cases required to validate the functionalities of an authentication system. It organizes test cases into tables for different sections such as *Account Creation, **Login, and **General Test Cases*.
+
+The key modules and test cases covered are:
+- *Account Creation*
+- *Email & Password Login*
+- *OTP Login*
+- *Email OTP Login*
+- *General Test Cases* like reset password and logout.
+
+Each section contains several test cases along with descriptions, expected outcomes, and placeholders for test results.
+
+## Features
+
+- *Organized Table Layout*: Each test case is organized in a structured table.
+- *Multiple Authentication Methods*:
+  - Account creation
+  - Email & password login
+  - OTP login
+  - Email OTP login
+- *Clean and Readable*: Easy to understand and expand with more test cases.
+- *Lightweight*: Simple HTML and CSS, no external dependencies.
+
+## How to Use
+
+1. *Clone the repository*:
+
+    bash
+    git clone https://github.com/your-username/authentication-test-cases.git
+    
+
+2. *Open the HTML file*:
+   - Navigate to the project directory and open the index.html file in any web browser.
+
+3. *Add or Edit Test Cases*:
+   - You can add more test cases by editing the HTML file, under each section (Account Creation, Login, etc.).
+
+4. *Use for Documentation*:
+   - You can use this as a test case documentation template or modify it according to your testing requirements.
+
+## Test Case Structure
+
+Each test case is structured as follows:
+
+| Column           | Description                                                                 |
+|------------------|-----------------------------------------------------------------------------|
+| *Test Case ID*  | A unique identifier for each test case.                                     |
+| *Test Case Description* | A brief explanation of what is being tested.                             |
+| *Expected Result* | The expected outcome when the test is run.                                    |
+| *Status*        | A field to indicate whether the test passed or failed after execution.       |
+
+### Example Test Case:
+
+#### *Account Creation Test Cases*
+
+| Test Case ID | Test Case Description                                | Expected Result                                      | Status |
+|--------------|------------------------------------------------------|------------------------------------------------------|--------|
+| TC-AC-001    | Verify successful account creation with valid data    | Account should be created successfully               |        |
+| TC-AC-002    | Verify account creation with existing email           | Should display an error message for duplicate email  |        |
+
+## Contributing
+
+If you'd like to contribute to this project, feel free to submit pull requests. Here's how to get started:
+
+1. Fork the repository.
+2. Create a new branch (git checkout -b feature-name).
+3. Make your changes.
+4. Commit your changes (git commit -m 'Add feature').
+5. Push to the branch (git push origin feature-name).
+6. Create a pull request.
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for more details.
 
 This markdown should be suitable for a GitHub README file, improving readability while keeping all key information intact. Would you like to further customize the styling or content for your README?
