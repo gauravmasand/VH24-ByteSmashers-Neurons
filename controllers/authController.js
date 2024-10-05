@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const rateLimit = require("express-rate-limit");
 const jwt = require("jsonwebtoken");
 const geoip = require("geoip-lite");
 const bcrypt = require("bcrypt");
@@ -8,6 +9,7 @@ const OTP = require("../models/OTP");
 const { sendOtpToEmail } = require("../utils/otpUtils");
 const nodemailer = require("nodemailer");
 const refreshTokens = new Map();
+const rateLimitMap = new Map();
 
 const { sendVerificationEmail } = require("../utils/emailUtils");
 
@@ -15,6 +17,16 @@ exports.register = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
+
+    if (!email || !name || !password) {
+      return res.status(400).json({ message: "All fields is required." });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
+
     console.log("Step 1: Checking if the user already exists...");
     let user = await User.findOne({ email });
 
@@ -45,37 +57,61 @@ exports.register = async (req, res) => {
     await sendVerificationEmail(email, user.id);
 
     console.log("Step 5: Registration successful");
-    res
-      .status(201)
-      .json({
-        message:
-          "User registered successfully, please check your email to verify your account",
-      });
+    res.status(201).json({
+      message:
+        "User registered successfully, please check your email to verify your account",
+    });
   } catch (err) {
     console.error("Error occurred during registration:", err);
     res.status(500).send("Server Error");
   }
 };
 
+// Rate limiting login attempts and lockout mechanism
 exports.login = async (req, res) => {
   const { email, password } = req.body;
+  const maxAttempts = 5;
+  const lockoutTime = 60 * 60 * 1000; // 1 hour
+
   try {
+    if (!email || !password) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
+
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    // Check if user is locked out
+    const userAttempts = rateLimitMap.get(email) || { attempts: 0, lockUntil: null };
+    if (userAttempts.lockUntil && userAttempts.lockUntil > Date.now()) {
+      return res.status(403).json({ message: "Too many login attempts. Please try again after 1 hour." });
+    }
+
     // Check if the email is verified
     if (!user.isVerified) {
-      return res
-        .status(400)
-        .json({ message: "Please verify your email before logging in." });
+      return res.status(400).json({ message: "Please verify your email before logging in." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      userAttempts.attempts += 1;
+      if (userAttempts.attempts >= maxAttempts) {
+        userAttempts.lockUntil = Date.now() + lockoutTime;
+        userAttempts.attempts = 0;
+      }
+      rateLimitMap.set(email, userAttempts);
       return res.status(400).json({ message: "Invalid credentials" });
     }
+
+    // Reset attempts after successful login
+    rateLimitMap.delete(email);
 
     // Generate OTP
     const otp = crypto.randomInt(100000, 999999).toString(); // Generates a 6-digit OTP
@@ -109,9 +145,7 @@ exports.login = async (req, res) => {
     try {
       await transporter.sendMail(mailOptions);
       console.log("OTP email sent successfully to:", user.email);
-      res
-        .status(200)
-        .json({ message: "OTP has been sent to your email address." });
+      res.status(200).json({ message: "OTP has been sent to your email address." });
     } catch (err) {
       console.error("Error sending OTP email:", err);
       res.status(500).json({ message: "Error sending OTP email." });
@@ -125,6 +159,16 @@ exports.login = async (req, res) => {
 exports.loginOTPVerify = async (req, res) => {
   const { email, otp } = req.body;
   try {
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "All fields is required." });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
+
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -146,49 +190,14 @@ exports.loginOTPVerify = async (req, res) => {
     });
 
     // Generate Refresh Token
-    const refreshToken = crypto.randomBytes(64).toString('hex');
+    const refreshToken = crypto.randomBytes(64).toString("hex");
     refreshTokens.set(refreshToken, user.id);
-
-    // Send email notification about the login
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const userAgent = req.get('User-Agent');
-
-    // Use a different SMTP server to avoid Gmail restrictions
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST, // Replace with your SMTP server host
-      port: process.env.SMTP_PORT, // Replace with your SMTP server port
-      secure: process.env.SMTP_SECURE === 'true', // Use true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER, // SMTP user
-        pass: process.env.SMTP_PASS, // SMTP password
-      },
-    });
-
-    const mailOptions = {
-      from: process.env.EMAIL_SENDER,
-      to: user.email,
-      subject: 'New Login Detected',
-      text: `A new login to your account was detected.
-
-Device Details:
-- IP Address: ${ip}
-- User Agent: ${userAgent}
-
-If this wasn't you, please change your password immediately.`
-    };
-
-    try {
-      const info = await transporter.sendMail(mailOptions);
-      console.log(`OTP email sent successfully to: ${user.email}, Message ID: ${info.messageId}`);
-    } catch (emailError) {
-      console.error("Error sending email notification: ", emailError);
-    }
 
     res.json({
       token,
       refreshToken,
       expiresIn: 3600, // Token expiry time in seconds
-      userId: user.id
+      userId: user.id,
     });
   } catch (err) {
     console.error("Error during OTP verification process: ", err); // Log detailed error to console for debugging
@@ -196,13 +205,22 @@ If this wasn't you, please change your password immediately.`
   }
 };
 
-
 //// Email OTP login
 
 // User Registration
 exports.registerForOtp = async (req, res) => {
   const { name, email, password, phone, ip, location } = req.body;
   try {
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields is required." });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
+
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: "User already exists" });
@@ -217,11 +235,9 @@ exports.registerForOtp = async (req, res) => {
     await otpEntry.save();
 
     await sendOtpToEmail(email, otp); // Updated to actually send an email
-    res
-      .status(200)
-      .json({
-        message: "User registered successfully and OTP sent successfully",
-      });
+    res.status(200).json({
+      message: "User registered successfully and OTP sent successfully",
+    });
   } catch (err) {
     res.status(500).send("Server Error");
   }
@@ -231,6 +247,16 @@ exports.registerForOtp = async (req, res) => {
 exports.requestOTP = async (req, res) => {
   const { email } = req.body;
   try {
+
+    if (!email) {
+      return res.status(400).json({ message: "All fields is required." });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
+
     let user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "User not found" });
@@ -252,7 +278,18 @@ exports.requestOTP = async (req, res) => {
 // Verify OTP for Login
 exports.verifyOTP = async (req, res) => {
   const { email, otp } = req.body;
+
   try {
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "All fields is required." });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
+
     const otpRecord = await OTP.findOne({ email, otp });
     if (!otpRecord) {
       return res.status(400).json({ message: "Invalid OTP" });
