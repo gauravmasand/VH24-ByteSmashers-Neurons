@@ -16,53 +16,59 @@ This API provides authentication services through **JWT-based token authenticati
 - **Purpose:** Sends an OTP to the user's phone number for verification.
 
 **Request:**
-```json
+json
+```
 {
   "phoneNumber": "+1234567890"
 }
 Success Response (200):
-
+```
 json
-Copy code
+```
 {
   "status": "success",
   "message": "OTP sent to the provided phone number."
 }
+```
 Failure Response (400):
 
 json
-Copy code
+```
 {
   "status": "error",
   "message": "Invalid phone number or OTP generation failed."
 }
+```
 1.2 Verify OTP for Phone Signup
 Endpoint: POST /signup/phone/verify-otp
 Purpose: Verifies the OTP entered by the user for phone number signup.
 Request:
 
 json
-Copy code
+ ```
 {
   "phoneNumber": "+1234567890",
   "otp": "123456"
 }
+```
 Success Response (200):
 
 json
-Copy code
+ ```
 {
   "status": "success",
   "message": "Phone number verified successfully."
 }
+```
 Failure Response (400):
 
 json
-Copy code
+ ```
 {
   "status": "error",
   "message": "Invalid OTP or OTP expired."
 }
+```
 2. Email-based OTP Authentication
 2.1 Register for OTP (Email-based)
 Endpoint: POST /register-for-otp
@@ -70,79 +76,88 @@ Purpose: Registers a user for OTP-based email authentication.
 Request:
 
 json
-Copy code
+ ```
 {
   "email": "user@example.com"
 }
+```
 Success Response (200):
 
 json
-Copy code
+ ```
 {
   "status": "success",
   "message": "User registered for OTP."
 }
+```
 Failure Response (400):
 
 json
-Copy code
+ ```
 {
   "status": "error",
   "message": "Registration failed. Email might be invalid."
 }
+```
 2.2 Request OTP for Email Verification
 Endpoint: POST /request-otp
 Purpose: Sends an OTP to the registered email address for verification.
 Request:
 
 json
-Copy code
+ ```
 {
   "email": "user@example.com"
 }
+```
 Success Response (200):
 
 json
-Copy code
+ ```
 {
   "status": "success",
   "message": "OTP sent to the provided email address."
 }
+```
 Failure Response (400):
 
 json
-Copy code
+ ```
 {
   "status": "error",
   "message": "Failed to send OTP. Email might be invalid."
 }
+```
 2.3 Verify OTP for Email Verification
 Endpoint: POST /verify-otp
 Purpose: Verifies the OTP entered by the user for email verification.
 Request:
 
 json
-Copy code
+ ```
 {
   "email": "user@example.com",
   "otp": "123456"
 }
+```
 Success Response (200):
 
 json
-Copy code
+ ```
 {
   "status": "success",
   "message": "Email verified successfully."
 }
+```
 Failure Response (400):
 
 json
-Copy code
+ ```
 {
   "status": "error",
   "message": "Invalid OTP or OTP expired."
 }
+```
 3. General Authentication
 3.1 User Registration
 Endpoint: POST /register
@@ -150,81 +165,90 @@ Purpose: Registers a new user.
 Request:
 
 json
-Copy code
+ ```
 {
   "email": "user@example.com",
   "password": "yourPassword",
   "name": "John Doe"
 }
+```
 Success Response (200):
 
 json
-Copy code
+ ```
 {
   "status": "success",
   "message": "User registered successfully."
 }
+```
 Failure Response (400):
 
 json
-Copy code
+ ```
 {
   "status": "error",
   "message": "Registration failed. Email might already exist."
 }
+```
 3.2 User Login
 Endpoint: POST /login
 Purpose: Logs in an existing user.
 Request:
 
 json
-Copy code
+ ```
 {
   "email": "user@example.com",
   "password": "yourPassword"
 }
+```
 Success Response (200):
 
 json
-Copy code
+ ```
 {
   "status": "success",
   "token": "JWT_TOKEN"
 }
+```
 Failure Response (400):
 
 json
-Copy code
+ ```
 {
   "status": "error",
   "message": "Login failed. Invalid credentials."
 }
+```
 4. Token-based Authentication (JWT)
 4.1 Middleware for Authenticated Routes
 Purpose: Protects routes by verifying JWT tokens in the request header.
 Request Header:
 
 json
-Copy code
+ ```
 {
   "x-auth-token": "JWT_TOKEN"
 }
+```
 Success Response (200):
 
 json
-Copy code
+ ```
 {
   "status": "success",
   "message": "Token is valid."
 }
+```
 Failure Response (401):
 
 json
-Copy code
+ ```
 {
   "status": "error",
   "message": "No token, authorization denied."
 }
+```
 5. Email Verification
 5.1 Verify Email with Token
 Endpoint: GET /verify-email
@@ -232,24 +256,26 @@ Purpose: Verifies the user's email using the token sent in the verification link
 Request:
 
 bash
-Copy code
+ 
 GET /verify-email?token=YOUR_VERIFICATION_TOKEN
 Success Response (200):
 
 json
-Copy code
+ ```
 {
   "status": "success",
   "message": "Email verified successfully."
 }
+```
 Failure Response (400):
 
 json
-Copy code
+ ```
 {
   "status": "error",
   "message": "Invalid verification link."
 }
+```
 Status Codes
 Status Code	Description
 200	Success
@@ -258,6 +284,6 @@ Status Code	Description
 404	Not Found (Endpoint does not exist)
 500	Internal Server Error
 css
-Copy code
+ 
 
 This markdown should be suitable for a GitHub README file, improving readability while keeping all key information intact. Would you like to further customize the styling or content for your README?
